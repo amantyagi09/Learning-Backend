@@ -1,0 +1,20 @@
+{
+  "name": "backend-cac",
+  "version": "1.0.0",
+  "description": "a backend learning from chai aur code",
+  "keywords": [
+    "javascript",
+    "backend"
+  ],
+  "license": "ISC",
+  "author": "Aman Kumar",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
