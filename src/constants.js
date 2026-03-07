@@ -1,0 +1,1 @@
+export const DB_NAME = "videotube"  // application database's name
