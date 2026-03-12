@@ -32,7 +32,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   //checked if user already exists?
 
-  const existedUser = User.findOne({
+  const existedUser = await User.findOne({
     $or: [{ email }, { username }],
   });
 
@@ -42,6 +42,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
   const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  console.log(req.files?.avatar[0]?.path);
+  
+  console.log("uploaded file in local");
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
@@ -54,11 +57,10 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!avatar) {
     throw new ApiError(400, "Please reupload Avatar file");
   }
-  console.log(avatar);
-  console.log(coverImage);
+
 
   //creating new user in MongoDB.
-  const user = User.create({
+  const user = await User.create({
     fullname,
     avatar: avatar.url,
     coverImage: coverImage?.url || "",
@@ -66,6 +68,8 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
     username: username.toLowerCase(),
   });
+  console.log(user);
+  
 
   //remove password and refershToken from data before sending it to user.
   const createdUser = await User.findById(user._id).select(
