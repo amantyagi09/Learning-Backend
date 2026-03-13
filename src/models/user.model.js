@@ -32,10 +32,12 @@ const userSchema = new Schema(
     coverImage: {
       type: String, //cloudinary url
     },
-    watchHistory: {
-      type: Schema.Types.ObjectId,
-      ref: "Video",
-    },
+    watchHistory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Video",
+      }
+    ],
     password: {
       type: String,
       required: [true, "PASSWORD is required"],
@@ -50,11 +52,11 @@ const userSchema = new Schema(
 //encrypting the password using bcrypt
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
-      return next;
-    }
+    return next;
+  }
 
-    this.password = await bcrypt.hash(this.password, 10);
-    next;
+  this.password = await bcrypt.hash(this.password, 10);
+  next;
 });
 
 //custom methods
@@ -77,7 +79,7 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 userSchema.methods.generateRefreshToken = function () {
-    return jwt.sign(
+  return jwt.sign(
     {
       _id: this._id,
     },

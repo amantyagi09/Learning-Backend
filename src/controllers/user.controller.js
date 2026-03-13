@@ -4,6 +4,24 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const generateAccessAndRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating refresh and access token",
+    );
+  }
+};
+
 const registerUser = asyncHandler(async (req, res) => {
   //STEPS:-
   //take input from user
@@ -42,7 +60,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
   const coverImageLocalPath = req.files?.coverImage[0]?.path;
-//   console.log(req.files?.avatar[0]?.path);
+  //   console.log(req.files?.avatar[0]?.path);
 
   console.log("uploaded file in local");
 
@@ -84,4 +102,96 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User Created Successfully"));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  /*Steps:--
+    1. take input 
+    2. validate the input
+    3. find the user
+    4. check password
+    5. access and refresh token (generate and send to user)
+    6. send cookie
+    7.send response
+    */
+
+  //taking input
+  const { email, username, password } = req.body;
+
+  //validating that either username or email is provided
+  if (!username || !email) {
+    throw new ApiError(400, "Email or Username is required");
+  }
+
+  //checking if user already exists
+  const user = await User.findOne({
+    $or: [{ email }, { username }],
+  });
+
+  if (!user) {
+    throw new ApiError(404, "user doesn't exist");
+  }
+
+  //checking password
+  const isPassowrdValid = await user.isPasswordCorrect(password);
+
+  if (!isPassowrdValid) {
+    throw new ApiError(401, "Invalid password");
+  }
+
+  //generating access and refresh Tokens
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id,
+  );
+
+  //updated user details
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken",
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  }; //this makes the cookies unmodifiable from frontend, only server side can modify this cookie now.
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { user: loggedInUser, accessToken, refreshToken },
+        "User logged in successfully",
+      ),
+    );
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+  /*STEPS:-
+    1. clear the cookies
+    2. reset the user's refresh Token
+    */
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        refreshToken: undefined,
+      },
+    },
+    {
+      new: true, // return the new updated version
+    },
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"));
+});
+
+export { registerUser, loginUser, logoutUser };
