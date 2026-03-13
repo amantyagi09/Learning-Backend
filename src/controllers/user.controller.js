@@ -42,8 +42,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
   const coverImageLocalPath = req.files?.coverImage[0]?.path;
-  console.log(req.files?.avatar[0]?.path);
-  
+//   console.log(req.files?.avatar[0]?.path);
+
   console.log("uploaded file in local");
 
   if (!avatarLocalPath) {
@@ -58,7 +58,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please reupload Avatar file");
   }
 
-
   //creating new user in MongoDB.
   const user = await User.create({
     fullname,
@@ -69,7 +68,6 @@ const registerUser = asyncHandler(async (req, res) => {
     username: username.toLowerCase(),
   });
   console.log(user);
-  
 
   //remove password and refershToken from data before sending it to user.
   const createdUser = await User.findById(user._id).select(
