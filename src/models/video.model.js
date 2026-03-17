@@ -12,7 +12,7 @@ const videoSchema = new Schema(
       type: String, //cloudinary url
       required: true,
     },
-    ttle: {
+    title: {
       type: String,
       required: true,
     },
